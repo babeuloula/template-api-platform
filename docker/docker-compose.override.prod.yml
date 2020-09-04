@@ -1,0 +1,32 @@
+version: '3.5'
+
+services:
+    nginx:
+        environment:
+            - LETSENCRYPT_HOST=${HTTP_HOST}
+            - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
+        volumes:
+            - ./logs/nginx:/var/log/nginx
+        networks:
+            - default
+            - babeuloula
+
+    php:
+        networks:
+            default:
+            template_api_platform:
+                aliases:
+                    - "${COMPOSE_PROJECT_NAME}_php"
+
+    mysql:
+        networks:
+            default:
+            template_api_platform:
+                aliases:
+                    - "${COMPOSE_PROJECT_NAME}_mysql"
+
+networks:
+    template_api_platform:
+    default:
+        external:
+            name: ${NETWORK}

@@ -1,0 +1,218 @@
+version: 2.1
+
+commands:
+    checkout-alpine:
+        description: Install alpine requirements for checkout
+        steps:
+            - run:
+                  name: "Install alpine requirements for checkout"
+                  command: apk add git openssh-client curl make
+            - checkout
+
+    composer-install:
+        description: "Install dependencies"
+        steps:
+            - run:
+                  name: "Execute: composer install"
+                  environment:
+                      APP_ENV: "test"
+                  command: |
+                      if [ ! -f vendor/autoload.php ];then
+                          curl https://getcomposer.org/composer-stable.phar --location --silent  --output /usr/bin/composer;
+                          chmod +x /usr/bin/composer;
+                          composer global require hirak/prestissimo;
+                          composer install --no-interaction --no-progress --ignore-platform-reqs;
+                      fi
+
+    restore-composer-cache:
+        description: "Restore vendor folder from CircleCI cache"
+        steps:
+            - restore_cache:
+                  key: composer-{{ checksum "composer.json" }}-{{ checksum "composer.lock" }}
+
+    restore-phpunit-cache:
+        description: "Restore PHPUnit folder from CircleCI cache"
+        steps:
+            - restore_cache:
+                  key: phpunit-7.5.0
+
+    store-composer-cache:
+        description: "Store vendor folder in CircleCI cache"
+        steps:
+            - checkout-alpine
+            - restore-composer-cache
+            - composer-install
+            - save_cache:
+                  key: composer-{{ checksum "composer.json" }}-{{ checksum "composer.lock" }}
+                  paths:
+                      - ./vendor
+            - persist_to_workspace:
+                  root: .
+                  paths:
+                      - vendor
+
+    store-phpunit-cache:
+        description: "Store PHPUnit folder in CircleCI cache"
+        steps:
+            - save_cache:
+                  key: phpunit-7.5.0
+                  paths:
+                      - ./bin/.phpunit
+            - persist_to_workspace:
+                  root: .
+                  paths:
+                      - bin/.phpunit
+
+    phpcs:
+        description: "Execute PHPCS"
+        steps:
+            - run:
+                  name: "Execute: make phpcs"
+                  command: make phpcs
+
+    phpstan:
+        description: "Execute PHPStan"
+        steps:
+            - run:
+                  name: "Execute: make stan"
+                  environment:
+                      APP_ENV: "test"
+                  command: make stan
+
+    doctrine_schema_validate:
+        description: "Execute doctrine:schema:validate"
+        steps:
+            - run:
+                  name: "Execute: bin/console d:s:v"
+                  environment:
+                      APP_ENV: "test"
+                  command: bin/console d:s:v --skip-sync
+
+    phpunit:
+        description: "Execute PHPUnit"
+        steps:
+            - run:
+                  name: "Install composer binary"
+                  environment:
+                      APP_ENV: "test"
+                  command: |
+                      curl https://getcomposer.org/composer-stable.phar --location --silent  --output /usr/bin/composer;
+                      chmod +x /usr/bin/composer;
+            - run:
+                  name: "Execute: make phpunit"
+                  environment:
+                      APP_ENV: "test"
+                  command: make phpunit
+
+    build_docker:
+        description: "Build Dockerfile"
+        parameters:
+            image_name:
+                type: string
+            image_dockerfile:
+                type: string
+            image_args:
+                type: string
+            image_tag:
+                type: string
+        steps:
+            - run:
+                  name: "Build image << parameters.image_name >>"
+                  command: |
+                      docker build << parameters.image_dockerfile >> << parameters.image_args >> -t << parameters.image_tag >>
+
+executors:
+    php:
+        docker:
+            - image: php:7.4-cli-alpine3.10
+        working_directory: ~/repository
+
+jobs:
+    composer:
+        executor: php
+        steps:
+            - store-composer-cache
+
+    phpcs:
+        executor: php
+        steps:
+            - checkout-alpine
+            - restore-composer-cache
+            - phpcs
+
+    phpstan:
+        executor: php
+        steps:
+            - checkout-alpine
+            - restore-composer-cache
+            - phpstan
+
+    doctrine_schema_validate:
+        executor: php
+        steps:
+            - checkout-alpine
+            - restore-composer-cache
+            - doctrine_schema_validate
+
+    phpunit:
+        executor: php
+        steps:
+            - checkout-alpine
+            - restore-composer-cache
+            - restore-phpunit-cache
+            - phpunit
+            - store-phpunit-cache
+
+    build_nginx:
+        machine: true
+        working_directory: ~/repository
+        steps:
+            - checkout
+            - build_docker:
+                  image_name: "NGINX dev"
+                  image_dockerfile: "./docker/dev/nginx/."
+                  image_args: ""
+                  image_tag: "nginx-dev"
+            - build_docker:
+                  image_name: "NGINX prod"
+                  image_dockerfile: "./docker/prod/nginx/."
+                  image_args: ""
+                  image_tag: "nginx-prod"
+
+    build_php:
+        machine: true
+        working_directory: ~/repository
+        steps:
+            - checkout
+            - build_docker:
+                  image_name: "PHP dev"
+                  image_dockerfile: "./docker/dev/php/."
+                  image_args: "--build-arg UID=1000 --build-arg TZ=Europe/Paris --build-arg XDEBUG_REMOTE_HOST=127.0.0.1 --build-arg XDEBUG_REMOTE_PORT=9000"
+                  image_tag: "php-dev"
+            - build_docker:
+                  image_name: "PHP prod"
+                  image_dockerfile: "./docker/prod/php/."
+                  image_args: "--build-arg UID=1000 --build-arg TZ=Europe/Paris"
+                  image_tag: "php-prod"
+
+workflows:
+    version: 2.1
+    Docker build:
+        jobs:
+            - build_nginx
+            - build_php
+    Code quality:
+        jobs:
+            - composer
+            - phpcs:
+                  requires:
+                      - composer
+            - phpstan:
+                  requires:
+                      - composer
+            - doctrine_schema_validate:
+                  requires:
+                      - composer
+            - phpunit:
+                  requires:
+                      - composer
