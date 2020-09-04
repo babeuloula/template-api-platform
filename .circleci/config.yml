@@ -30,6 +30,12 @@ commands:
             - restore_cache:
                   key: composer-{{ checksum "composer.json" }}-{{ checksum "composer.lock" }}
 
+    restore-phpunit-cache:
+        description: "Restore phpunit folder from CircleCI cache"
+        steps:
+            - restore_cache:
+                  key: phpunit-{{ checksum "bin/.phpunit/.phpunit-7.5-0.md5" }}
+
     store-composer-cache:
         description: "Store vendor folder in CircleCI cache"
         steps:
@@ -44,6 +50,18 @@ commands:
                   root: .
                   paths:
                       - vendor
+
+    store-phpunit-cache:
+        description: "Store phpunit folder in CircleCI cache"
+        steps:
+            - save_cache:
+                  key: phpunit-{{ checksum "bin/.phpunit/.phpunit-7.5-0.md5" }}
+                  paths:
+                      - ./bin/.phpunit
+            - persist_to_workspace:
+                  root: .
+                  paths:
+                      - bin/.phpunit
 
     phpcs:
         description: "Execute PHPCS"
@@ -69,6 +87,15 @@ commands:
                   environment:
                       APP_ENV: "test"
                   command: bin/console d:s:v --skip-sync
+
+    phpunit:
+        description: "Execute doctrine:schema:validate"
+        steps:
+            - run:
+                  name: "Execute: make phpunit"
+                  environment:
+                      APP_ENV: "test"
+                  command: make phpunit
 
     build_docker:
         description: "Build Dockerfile"
@@ -120,6 +147,15 @@ jobs:
             - restore-composer-cache
             - doctrine_schema_validate
 
+    phpunit:
+        executor: php
+        steps:
+            - checkout-alpine
+            - restore-composer-cache
+            - restore-phpunit-cache
+            - phpunit
+            - store-phpunit-cache
+
     build_nginx:
         machine: true
         working_directory: ~/repository
@@ -164,9 +200,12 @@ workflows:
 #            - phpcs:
 #                  requires:
 #                      - composer
-            - phpstan:
-                  requires:
-                      - composer
+#            - phpstan:
+#                  requires:
+#                      - composer
 #            - doctrine_schema_validate:
 #                  requires:
 #                      - composer
+            - phpunit:
+                  requires:
+                      - composer

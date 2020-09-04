@@ -35,6 +35,7 @@ check:
 	cd ./docker/ && docker-compose exec -T php make phpcs
 	cd ./docker/ && docker-compose exec -T php make stan
 	cd ./docker/ && docker-compose exec -T php make doctrine
+	cd ./docker/ && docker-compose exec -T php make phpunit
 
 phpcs:
 	vendor/bin/phpcs
@@ -49,3 +50,6 @@ stan:
 doctrine:
 	bin/console d:s:v --env=test
 	bin/console d:s:u --dump-sql --env=test
+
+phpunit:
+	bin/phpunit
