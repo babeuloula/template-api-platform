@@ -204,15 +204,15 @@ workflows:
     Code quality:
         jobs:
             - composer
-#            - phpcs:
-#                  requires:
-#                      - composer
-#            - phpstan:
-#                  requires:
-#                      - composer
-#            - doctrine_schema_validate:
-#                  requires:
-#                      - composer
+            - phpcs:
+                  requires:
+                      - composer
+            - phpstan:
+                  requires:
+                      - composer
+            - doctrine_schema_validate:
+                  requires:
+                      - composer
             - phpunit:
                   requires:
                       - composer
