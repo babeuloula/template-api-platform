@@ -1,0 +1,50 @@
+version: '3.5'
+
+services:
+    nginx_proxy:
+        image: jwilder/nginx-proxy
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - /var/run/docker.sock:/tmp/docker.sock:ro
+            - ./${APP_ENV}/proxy/config/proxy.conf:/etc/nginx/conf.d/proxy.conf:ro
+            - ./certificates/${HTTP_HOST}.pem:/etc/nginx/certs/${HTTP_HOST}.crt:ro
+            - ./certificates/${HTTP_HOST}.key:/etc/nginx/certs/${HTTP_HOST}.key:ro
+        networks:
+            - template_api_platform
+        restart: "no"
+
+    nginx:
+        networks:
+            - template_api_platform
+        ports:
+            - "8080:80"
+        restart: "no"
+
+    php:
+        build:
+            args:
+                XDEBUG_REMOTE_HOST: "${XDEBUG_REMOTE_HOST:-172.17.0.1}"
+                XDEBUG_REMOTE_PORT: "${XDEBUG_REMOTE_PORT:-9000}"
+        networks:
+            - template_api_platform
+        restart: "no"
+
+    mysql:
+        ports:
+            - "${MYSQL_PORT:-3307}:3306"
+        networks:
+            - template_api_platform
+        restart: "no"
+
+    mailhog:
+        image: mailhog/mailhog
+        ports:
+            - "${MAILHOG_PORT:-8025}:8025"
+        networks:
+            - template_api_platform
+        restart: "no"
+
+networks:
+    template_api_platform:
