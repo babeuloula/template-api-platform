@@ -197,10 +197,10 @@ jobs:
 
 workflows:
     version: 2.1
-#    Docker build:
-#        jobs:
-#            - build_nginx
-#            - build_php
+    Docker build:
+        jobs:
+            - build_nginx
+            - build_php
     Code quality:
         jobs:
             - composer
