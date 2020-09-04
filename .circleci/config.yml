@@ -34,7 +34,8 @@ commands:
         description: "Restore phpunit folder from CircleCI cache"
         steps:
             - restore_cache:
-                  key: phpunit-{{ checksum "bin/.phpunit/.phpunit-7.5-0.md5" }}
+                  keys:
+                      - phpunit
 
     store-composer-cache:
         description: "Store vendor folder in CircleCI cache"
@@ -55,7 +56,8 @@ commands:
         description: "Store phpunit folder in CircleCI cache"
         steps:
             - save_cache:
-                  key: phpunit-{{ checksum "bin/.phpunit/.phpunit-7.5-0.md5" }}
+                  keys:
+                      - phpunit
                   paths:
                       - ./bin/.phpunit
             - persist_to_workspace:

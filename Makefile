@@ -35,7 +35,6 @@ check:
 	cd ./docker/ && docker-compose exec -T php make phpcs
 	cd ./docker/ && docker-compose exec -T php make stan
 	cd ./docker/ && docker-compose exec -T php make doctrine
-	cd ./docker/ && docker-compose exec -T php make phpunit
 
 phpcs:
 	vendor/bin/phpcs
