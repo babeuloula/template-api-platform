@@ -154,19 +154,19 @@ jobs:
 
 workflows:
     version: 2.1
-    Docker build:
-        jobs:
-            - build_nginx
-            - build_php
+#    Docker build:
+#        jobs:
+#            - build_nginx
+#            - build_php
     Code quality:
         jobs:
             - composer
-            - phpcs:
-                  requires:
-                      - composer
+#            - phpcs:
+#                  requires:
+#                      - composer
             - phpstan:
                   requires:
                       - composer
-            - doctrine_schema_validate:
-                  requires:
-                      - composer
+#            - doctrine_schema_validate:
+#                  requires:
+#                      - composer

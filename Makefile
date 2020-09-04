@@ -43,9 +43,9 @@ fixer:
 	./vendor/bin/phpcbf
 
 stan:
-	bin/console cache:warmup --env=dev
-	vendor/bin/phpstan analyse --memory-limit=4000M
+	bin/console cache:warmup --env=test
+	export APP_ENV=test && vendor/bin/phpstan analyse --memory-limit=4000M
 
 doctrine:
-	bin/console d:s:v
-	bin/console d:s:u --dump-sql
+	bin/console d:s:v --env=test
+	bin/console d:s:u --dump-sql --env=test
