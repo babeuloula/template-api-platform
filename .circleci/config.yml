@@ -34,8 +34,7 @@ commands:
         description: "Restore phpunit folder from CircleCI cache"
         steps:
             - restore_cache:
-                  keys:
-                      - phpunit
+                  key: phpunit
 
     store-composer-cache:
         description: "Store vendor folder in CircleCI cache"
@@ -56,8 +55,7 @@ commands:
         description: "Store phpunit folder in CircleCI cache"
         steps:
             - save_cache:
-                  keys:
-                      - phpunit
+                  key: phpunit
                   paths:
                       - ./bin/.phpunit
             - persist_to_workspace:
