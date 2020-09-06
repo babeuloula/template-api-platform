@@ -119,7 +119,7 @@ commands:
             - run:
                   name: "Build image << parameters.image_name >>"
                   command: |
-                      if [ $(git diff --exit-code HEAD HEAD^ << parameters.image_dockerfile >>Dockerfile) ];then
+                      if [ $(git diff --exit-code HEAD HEAD^ << parameters.image_dockerfile >>) ];then
                           docker build << parameters.image_dockerfile >>. << parameters.image_args >> -t << parameters.image_tag >>
                       fi
 
