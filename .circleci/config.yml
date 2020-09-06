@@ -119,7 +119,9 @@ commands:
             - run:
                   name: "Build image << parameters.image_name >>"
                   command: |
-                      docker build << parameters.image_dockerfile >> << parameters.image_args >> -t << parameters.image_tag >>
+                      if [ $(git diff --exit-code HEAD HEAD^ << parameters.image_dockerfile >>Dockerfile) ];then
+                          docker build << parameters.image_dockerfile >>. << parameters.image_args >> -t << parameters.image_tag >>
+                      fi
 
 executors:
     php:
@@ -170,12 +172,12 @@ jobs:
             - checkout
             - build_docker:
                   image_name: "NGINX dev"
-                  image_dockerfile: "./docker/dev/nginx/."
+                  image_dockerfile: "./docker/dev/nginx/"
                   image_args: ""
                   image_tag: "nginx-dev"
             - build_docker:
                   image_name: "NGINX prod"
-                  image_dockerfile: "./docker/prod/nginx/."
+                  image_dockerfile: "./docker/prod/nginx/"
                   image_args: ""
                   image_tag: "nginx-prod"
 
@@ -186,12 +188,12 @@ jobs:
             - checkout
             - build_docker:
                   image_name: "PHP dev"
-                  image_dockerfile: "./docker/dev/php/."
+                  image_dockerfile: "./docker/dev/php/"
                   image_args: "--build-arg UID=1000 --build-arg TZ=Europe/Paris --build-arg XDEBUG_REMOTE_HOST=127.0.0.1 --build-arg XDEBUG_REMOTE_PORT=9000"
                   image_tag: "php-dev"
             - build_docker:
                   image_name: "PHP prod"
-                  image_dockerfile: "./docker/prod/php/."
+                  image_dockerfile: "./docker/prod/php/"
                   image_args: "--build-arg UID=1000 --build-arg TZ=Europe/Paris"
                   image_tag: "php-prod"
 
