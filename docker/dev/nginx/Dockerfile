@@ -1,2 +1,3 @@
 FROM nginx:1.19-alpine
-EXPOSE 80 443
+EXPOSE 80
+EXPOSE 443
